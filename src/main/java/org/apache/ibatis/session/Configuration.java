@@ -726,6 +726,7 @@ public class Configuration {
   }
 
   public void addInterceptor(Interceptor interceptor) {
+    //将插件添加到插件链中
     interceptorChain.addInterceptor(interceptor);
   }
 

@@ -113,6 +113,9 @@ public abstract class BaseBuilder {
       return null;
     }
     try {
+      /**
+       * 通过别名获取类的Class对象
+       */
       return resolveAlias(alias);
     } catch (Exception e) {
       throw new BuilderException("Error resolving class. Cause: " + e, e);
@@ -146,6 +149,7 @@ public abstract class BaseBuilder {
   }
 
   protected Class<?> resolveAlias(String alias) {
+    //通过别名注册器解析
     return typeAliasRegistry.resolveAlias(alias);
   }
 }

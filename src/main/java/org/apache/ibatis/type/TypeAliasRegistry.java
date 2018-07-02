@@ -110,9 +110,12 @@ public class TypeAliasRegistry {
       // issue #748
       String key = string.toLowerCase(Locale.ENGLISH);
       Class<T> value;
+      //判断传入的是否是别名
       if (TYPE_ALIASES.containsKey(key)) {
+        //如果是别名则直接返回缓存的Class对象
         value = (Class<T>) TYPE_ALIASES.get(key);
       } else {
+        //如果不是则通过classForName初始化Class对象
         value = (Class<T>) Resources.classForName(string);
       }
       return value;
@@ -122,28 +125,40 @@ public class TypeAliasRegistry {
   }
 
   public void registerAliases(String packageName){
+    //注册别名
     registerAliases(packageName, Object.class);
   }
 
   public void registerAliases(String packageName, Class<?> superType){
+    //类的解析工具类
     ResolverUtil<Class<?>> resolverUtil = new ResolverUtil<Class<?>>();
+
+    //查找当前packageName下的符合条件的类
     resolverUtil.find(new ResolverUtil.IsA(superType), packageName);
+
+    //获取通过find查找到的所有类
     Set<Class<? extends Class<?>>> typeSet = resolverUtil.getClasses();
     for(Class<?> type : typeSet){
       // Ignore inner classes and interfaces (including package-info.java)
       // Skip also inner classes. See issue #6
+      //忽略内部类，接口
       if (!type.isAnonymousClass() && !type.isInterface() && !type.isMemberClass()) {
+        //正式处理注册对应类的别名
         registerAlias(type);
       }
     }
   }
 
   public void registerAlias(Class<?> type) {
+    //获取类的简称
     String alias = type.getSimpleName();
+    //如果使用了Alias注解，则优先使用Alias的注解
     Alias aliasAnnotation = type.getAnnotation(Alias.class);
     if (aliasAnnotation != null) {
       alias = aliasAnnotation.value();
-    } 
+    }
+
+    //加载类的别名
     registerAlias(alias, type);
   }
 
@@ -152,10 +167,13 @@ public class TypeAliasRegistry {
       throw new TypeException("The parameter alias cannot be null");
     }
     // issue #748
+    //别名使用小写字母
     String key = alias.toLowerCase(Locale.ENGLISH);
+    //判断是否重复加载
     if (TYPE_ALIASES.containsKey(key) && TYPE_ALIASES.get(key) != null && !TYPE_ALIASES.get(key).equals(value)) {
       throw new TypeException("The alias '" + alias + "' is already mapped to the value '" + TYPE_ALIASES.get(key).getName() + "'.");
     }
+    //映射到hashMap中
     TYPE_ALIASES.put(key, value);
   }
 

@@ -319,6 +319,7 @@ public final class TypeHandlerRegistry {
   @SuppressWarnings("unchecked")
   public <T> void register(TypeHandler<T> typeHandler) {
     boolean mappedTypeFound = false;
+    //处理MappedTypes注解
     MappedTypes mappedTypes = typeHandler.getClass().getAnnotation(MappedTypes.class);
     if (mappedTypes != null) {
       for (Class<?> handledType : mappedTypes.value()) {
@@ -327,6 +328,7 @@ public final class TypeHandlerRegistry {
       }
     }
     // @since 3.1.0 - try to auto-discover the mapped type
+    //如果没有指定javaType，则尝试通过其typeHandler的泛型的类作为映射
     if (!mappedTypeFound && typeHandler instanceof TypeReference) {
       try {
         TypeReference<T> typeReference = (TypeReference<T>) typeHandler;
@@ -337,6 +339,7 @@ public final class TypeHandlerRegistry {
       }
     }
     if (!mappedTypeFound) {
+      //如果上述都没有则使用null
       register((Class<T>) null, typeHandler);
     }
   }
@@ -348,15 +351,19 @@ public final class TypeHandlerRegistry {
   }
 
   private <T> void register(Type javaType, TypeHandler<? extends T> typeHandler) {
+    //获取MappedJdbcTypes注解，用户判断是否指定需要处理的jdbc类型
     MappedJdbcTypes mappedJdbcTypes = typeHandler.getClass().getAnnotation(MappedJdbcTypes.class);
     if (mappedJdbcTypes != null) {
+      //如果有指定jdbc类型，则循环注册对应java类型和typeHandler类型和对应的jdbc类型
       for (JdbcType handledJdbcType : mappedJdbcTypes.value()) {
         register(javaType, handledJdbcType, typeHandler);
       }
+      //如果注解指定同时可以处理null，则需要注册对应的null
       if (mappedJdbcTypes.includeNullJdbcType()) {
         register(javaType, null, typeHandler);
       }
     } else {
+      //如果没有注解，则默认使用null
       register(javaType, null, typeHandler);
     }
   }
@@ -372,14 +379,21 @@ public final class TypeHandlerRegistry {
   }
 
   private void register(Type javaType, JdbcType jdbcType, TypeHandler<?> handler) {
+    //处理javaType不为空的对象
     if (javaType != null) {
+      //改javaType是否已经有jdbc和typeHandler的映射map
       Map<JdbcType, TypeHandler<?>> map = TYPE_HANDLER_MAP.get(javaType);
+
+      //如果map为null或者空则新建jdbc和typeHandler的映射map，并将其加入到TYPE_HANDLER_MAP中
       if (map == null || map == NULL_TYPE_HANDLER_MAP) {
         map = new HashMap<JdbcType, TypeHandler<?>>();
         TYPE_HANDLER_MAP.put(javaType, map);
       }
+      //将jdbc和typeHandler的映射加入
       map.put(jdbcType, handler);
     }
+
+    //将typeHandler的class对象和实例保存到对应的映射中
     ALL_TYPE_HANDLERS_MAP.put(handler.getClass(), handler);
   }
 
@@ -391,14 +405,19 @@ public final class TypeHandlerRegistry {
 
   public void register(Class<?> typeHandlerClass) {
     boolean mappedTypeFound = false;
+    //获取MappedTypes注解，需要TypeHandler处理的java类型
     MappedTypes mappedTypes = typeHandlerClass.getAnnotation(MappedTypes.class);
+
     if (mappedTypes != null) {
+      //如果有加注解
       for (Class<?> javaTypeClass : mappedTypes.value()) {
+        //对需要typeHandler处理的java类型进行注册
         register(javaTypeClass, typeHandlerClass);
         mappedTypeFound = true;
       }
     }
     if (!mappedTypeFound) {
+      //如果上面没有注册成功，
       register(getInstance(null, typeHandlerClass));
     }
   }
@@ -423,6 +442,7 @@ public final class TypeHandlerRegistry {
 
   @SuppressWarnings("unchecked")
   public <T> TypeHandler<T> getInstance(Class<?> javaTypeClass, Class<?> typeHandlerClass) {
+    //如果javaTypeCalss有设置，则优先判断是否有入参为Class对象的构造函数，没有则使用无参构造函数初始化
     if (javaTypeClass != null) {
       try {
         Constructor<?> c = typeHandlerClass.getConstructor(Class.class);
@@ -444,12 +464,18 @@ public final class TypeHandlerRegistry {
   // scan
 
   public void register(String packageName) {
+    //新建一个类解析工具类
     ResolverUtil<Class<?>> resolverUtil = new ResolverUtil<Class<?>>();
+
+    //查找指定包下父类为TypeHandler的类型
     resolverUtil.find(new ResolverUtil.IsA(TypeHandler.class), packageName);
+
+    //获取所有查询到的类
     Set<Class<? extends Class<?>>> handlerSet = resolverUtil.getClasses();
     for (Class<?> type : handlerSet) {
       //Ignore inner classes and interfaces (including package-info.java) and abstract classes
       if (!type.isAnonymousClass() && !type.isInterface() && !Modifier.isAbstract(type.getModifiers())) {
+        //实际注册
         register(type);
       }
     }

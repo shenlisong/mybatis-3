@@ -103,19 +103,35 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void parseConfiguration(XNode root) {
     try {
       //issue #117 read properties first
+      //获取properties节点配置的properties属性
       propertiesElement(root.evalNode("properties"));
+      //获取setting中配置属性
       Properties settings = settingsAsProperties(root.evalNode("settings"));
       loadCustomVfs(settings);
+
+      //别名配置处理
       typeAliasesElement(root.evalNode("typeAliases"));
+
+      //加载插件
       pluginElement(root.evalNode("plugins"));
+
+      //加载对象工厂方法类
       objectFactoryElement(root.evalNode("objectFactory"));
+
+      //基本同对象工厂的加载流程
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
+
+      //设置setting属性到configuration中
       settingsElement(settings);
       // read it after objectFactory and objectWrapperFactory issue #631
       environmentsElement(root.evalNode("environments"));
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
+
+      //加载类型处理器
       typeHandlerElement(root.evalNode("typeHandlers"));
+
+      //Mapper加载
       mapperElement(root.evalNode("mappers"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
@@ -126,9 +142,14 @@ public class XMLConfigBuilder extends BaseBuilder {
     if (context == null) {
       return new Properties();
     }
+
+    //获取xml中配置的setting的属性
     Properties props = context.getChildrenAsProperties();
     // Check that all settings are known to the configuration class
+    //MataClass 缓存Configuration的元数据，用于判断属性是否存在
     MetaClass metaConfig = MetaClass.forClass(Configuration.class, localReflectorFactory);
+
+    //检查属性配置是否合法
     for (Object key : props.keySet()) {
       if (!metaConfig.hasSetter(String.valueOf(key))) {
         throw new BuilderException("The setting " + key + " is not known.  Make sure you spelled it correctly (case sensitive).");
@@ -153,11 +174,17 @@ public class XMLConfigBuilder extends BaseBuilder {
 
   private void typeAliasesElement(XNode parent) {
     if (parent != null) {
-      for (XNode child : parent.getChildren()) {
+      for (XNode child : parent.getChildren()) {//遍历子节点
+        //判断是否配置package属性，即对package包下的类都进行子类别名处理
         if ("package".equals(child.getName())) {
+          //获取包名
           String typeAliasPackage = child.getStringAttribute("name");
+
+          //通过configuration中的typeAliasRegistry注册包下类的别名
           configuration.getTypeAliasRegistry().registerAliases(typeAliasPackage);
         } else {
+
+          //通过指定具体类注册别名
           String alias = child.getStringAttribute("alias");
           String type = child.getStringAttribute("type");
           try {
@@ -177,11 +204,21 @@ public class XMLConfigBuilder extends BaseBuilder {
 
   private void pluginElement(XNode parent) throws Exception {
     if (parent != null) {
-      for (XNode child : parent.getChildren()) {
+      for (XNode child : parent.getChildren()) {//遍历子节点
+
+        //获取配置的插件类
         String interceptor = child.getStringAttribute("interceptor");
+
+        //获取目标插件的属性
         Properties properties = child.getChildrenAsProperties();
+
+        //实例化插件
         Interceptor interceptorInstance = (Interceptor) resolveClass(interceptor).newInstance();
+
+        //将获取的属性设置到插件中
         interceptorInstance.setProperties(properties);
+
+        //添加插件到configuration中插件链对象中
         configuration.addInterceptor(interceptorInstance);
       }
     }
@@ -189,10 +226,19 @@ public class XMLConfigBuilder extends BaseBuilder {
 
   private void objectFactoryElement(XNode context) throws Exception {
     if (context != null) {
+      //获取对象工厂的类型
       String type = context.getStringAttribute("type");
+
+      //获取其需要的属性
       Properties properties = context.getChildrenAsProperties();
+
+      //通过别名处理后，实例化对象
       ObjectFactory factory = (ObjectFactory) resolveClass(type).newInstance();
+
+      //把属性设置到对象中
       factory.setProperties(properties);
+
+      //把对象工厂设置到configuration中
       configuration.setObjectFactory(factory);
     }
   }
@@ -334,21 +380,32 @@ public class XMLConfigBuilder extends BaseBuilder {
       for (XNode child : parent.getChildren()) {
         if ("package".equals(child.getName())) {
           String typeHandlerPackage = child.getStringAttribute("name");
+          //加载对应包下的所有TypeHandler的子类,进行处理
           typeHandlerRegistry.register(typeHandlerPackage);
         } else {
+          //指定具体typeHandler处理
           String javaTypeName = child.getStringAttribute("javaType");
           String jdbcTypeName = child.getStringAttribute("jdbcType");
           String handlerTypeName = child.getStringAttribute("handler");
+
+          //通过别名获取java类型
           Class<?> javaTypeClass = resolveClass(javaTypeName);
+
+          //通过别名获取jdbc类型
           JdbcType jdbcType = resolveJdbcType(jdbcTypeName);
+
+          //通过别名获取typeHandler类型
           Class<?> typeHandlerClass = resolveClass(handlerTypeName);
           if (javaTypeClass != null) {
             if (jdbcType == null) {
+              //指定了java类型没有指定jdbc类型的注册
               typeHandlerRegistry.register(javaTypeClass, typeHandlerClass);
             } else {
+              //都指定的注册
               typeHandlerRegistry.register(javaTypeClass, jdbcType, typeHandlerClass);
             }
           } else {
+            //如果xml中没有指定javaType和jdbcType处理
             typeHandlerRegistry.register(typeHandlerClass);
           }
         }
