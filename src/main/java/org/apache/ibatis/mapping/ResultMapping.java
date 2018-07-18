@@ -28,18 +28,38 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 /**
  * @author Clinton Begin
  */
+
+//保存resultMap配置中的一行的属性
 public class ResultMapping {
 
   private Configuration configuration;
+  //映射的属性
   private String property;
+  //映射的sql的中列
   private String column;
+
+  //映射的java对象
   private Class<?> javaType;
+
+  //列的jdbc对象
   private JdbcType jdbcType;
+
+  //映射的对象处理七
   private TypeHandler<?> typeHandler;
+
+  //内部resultMap-id
   private String nestedResultMapId;
+
+  //内部的查询id
   private String nestedQueryId;
+
+  //不为空的列
   private Set<String> notNullColumns;
+
+  //映射的列的前缀
   private String columnPrefix;
+
+  //列的标志，id还是CONSTRUCTOR
   private List<ResultFlag> flags;
   private List<ResultMapping> composites;
   private String resultSet;
@@ -134,9 +154,14 @@ public class ResultMapping {
     
     public ResultMapping build() {
       // lock down collections
+      // 将collecions集合设置为不可修改
       resultMapping.flags = Collections.unmodifiableList(resultMapping.flags);
       resultMapping.composites = Collections.unmodifiableList(resultMapping.composites);
+
+      //解析typeHandler
       resolveTypeHandler();
+
+      //检验参数
       validate();
       return resultMapping;
     }
@@ -171,7 +196,10 @@ public class ResultMapping {
     
     private void resolveTypeHandler() {
       if (resultMapping.typeHandler == null && resultMapping.javaType != null) {
+        //如果xml中没有配置
         Configuration configuration = resultMapping.configuration;
+
+        //在已经初始化好的typeHandlerResgistery中获取typeHandler
         TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
         resultMapping.typeHandler = typeHandlerRegistry.getTypeHandler(resultMapping.javaType, resultMapping.jdbcType);
       }

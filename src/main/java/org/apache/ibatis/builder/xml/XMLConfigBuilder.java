@@ -417,12 +417,13 @@ public class XMLConfigBuilder extends BaseBuilder {
     if (parent != null) {
       for (XNode child : parent.getChildren()) {
         if ("package".equals(child.getName())) {
+          //将包内的映射器接口实现全部注册为映射器
           String mapperPackage = child.getStringAttribute("name");
           configuration.addMappers(mapperPackage);
         } else {
-          String resource = child.getStringAttribute("resource");
-          String url = child.getStringAttribute("url");
-          String mapperClass = child.getStringAttribute("class");
+          String resource = child.getStringAttribute("resource");//使用相对于类路径的资源引用
+          String url = child.getStringAttribute("url");//使用完全限定资源定位符（URL）
+          String mapperClass = child.getStringAttribute("class");//使用映射器接口实现类的完全限定类名
           if (resource != null && url == null && mapperClass == null) {
             ErrorContext.instance().resource(resource);
             InputStream inputStream = Resources.getResourceAsStream(resource);

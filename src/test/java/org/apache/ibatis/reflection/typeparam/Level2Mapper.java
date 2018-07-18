@@ -18,5 +18,5 @@ package org.apache.ibatis.reflection.typeparam;
 import java.io.Serializable;
 import java.util.Date;
 
-public interface Level2Mapper extends Level1Mapper<Date, Integer>, Serializable, Comparable<Integer>{
+public interface Level2Mapper<T> extends Level1Mapper<T, Integer>, Serializable, Comparable<Integer>{
 }

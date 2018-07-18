@@ -287,8 +287,16 @@ public class DefaultSqlSession implements SqlSession {
     return configuration;
   }
 
+  /**
+   * 获取一个类型为type的Mapper实例
+   * @param type Mapper interface class
+   * @param <T>
+   * @return
+   */
   @Override
   public <T> T getMapper(Class<T> type) {
+
+    //通过configuration获取
     return configuration.<T>getMapper(type, this);
   }
 

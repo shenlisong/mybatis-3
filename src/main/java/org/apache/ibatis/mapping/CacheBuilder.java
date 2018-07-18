@@ -90,15 +90,24 @@ public class CacheBuilder {
   }
 
   public Cache build() {
+    //设置默认的Cache的实现类和装饰类
     setDefaultImplementations();
+
+    //生成基本的缓存对象
     Cache cache = newBaseCacheInstance(implementation, id);
+
+    //设置缓存需要的属性
     setCacheProperties(cache);
     // issue #352, do not apply decorators to custom caches
+
+    //如果cache的实际类为PerpetualCache，则初始化装饰类
     if (PerpetualCache.class.equals(cache.getClass())) {
       for (Class<? extends Cache> decorator : decorators) {
         cache = newCacheDecoratorInstance(decorator, cache);
         setCacheProperties(cache);
       }
+
+      //设置标准包装类
       cache = setStandardDecorators(cache);
     } else if (!LoggingCache.class.isAssignableFrom(cache.getClass())) {
       cache = new LoggingCache(cache);
@@ -122,12 +131,16 @@ public class CacheBuilder {
         metaCache.setValue("size", size);
       }
       if (clearInterval != null) {
+        //实现刷新时间的缓存包装类
         cache = new ScheduledCache(cache);
         ((ScheduledCache) cache).setClearInterval(clearInterval);
       }
       if (readWrite) {
+        //可序列化的缓存包装类
         cache = new SerializedCache(cache);
       }
+
+      //默认添加日志和同步包装类，同步包装类保证在多个session共享的时候保证线程安全
       cache = new LoggingCache(cache);
       cache = new SynchronizedCache(cache);
       if (blocking) {

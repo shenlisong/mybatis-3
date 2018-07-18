@@ -40,6 +40,8 @@ public interface Level0Mapper<L, M, N> {
 
   N select(N param);
 
+  L selectL();
+
   List<N> selectList(M param1, N param2);
 
   List<? extends N> selectWildcardList();

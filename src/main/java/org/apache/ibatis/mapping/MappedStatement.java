@@ -29,28 +29,61 @@ import org.apache.ibatis.scripting.LanguageDriver;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * select/update/insert/delete xml描述的数据结果
  * @author Clinton Begin
  */
 public final class MappedStatement {
 
   private String resource;
   private Configuration configuration;
+
+  //每条语句的唯一id
   private String id;
+
+  //每次返回的数据的数量
   private Integer fetchSize;
+
+  //请求的超时时间
   private Integer timeout;
+
+  //statement类
   private StatementType statementType;
+
+  //结果集的游标操作类型
   private ResultSetType resultSetType;
+
+  //对应一条sql语句
   private SqlSource sqlSource;
+
+  //对应的一条sql的缓存
   private Cache cache;
+
+  //已基本不用
   private ParameterMap parameterMap;
+
+  //对应返回的resultMap
   private List<ResultMap> resultMaps;
+
+  //是否需要刷新缓存
   private boolean flushCacheRequired;
+
+  //是否使用缓存
   private boolean useCache;
   private boolean resultOrdered;
+
+  //sql类型 insert/update/insert/del
   private SqlCommandType sqlCommandType;
+
+  //sql执行前后处理
   private KeyGenerator keyGenerator;
+
+  //需要获取属性
   private String[] keyProperties;
+
+  //需要获取属性的列
   private String[] keyColumns;
+
+  //是否有内映射
   private boolean hasNestedResultMaps;
   private String databaseId;
   private Log statementLog;

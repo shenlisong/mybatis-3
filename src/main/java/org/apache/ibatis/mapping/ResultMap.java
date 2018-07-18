@@ -39,17 +39,40 @@ import org.apache.ibatis.session.Configuration;
 public class ResultMap {
   private Configuration configuration;
 
+  //resultMappper的的id标识
   private String id;
+
+  //resultMapper的类型
   private Class<?> type;
+
+  //所有的resultMapping对象，包括constructor/idArg,constructor/arg,result,association,collection,但不包括association和collection里的子节点
   private List<ResultMapping> resultMappings;
+
+  //包括constructor/idArg,id
   private List<ResultMapping> idResultMappings;
+
+  //constructor里的子节点
   private List<ResultMapping> constructorResultMappings;
+
+  //除constructor里的子节点,其他都是，result,association,collection,id
   private List<ResultMapping> propertyResultMappings;
+
+  //所有被映射的列
   private Set<String> mappedColumns;
+
+  //所有映射的属性
   private Set<String> mappedProperties;
+
+  //鉴别器
   private Discriminator discriminator;
+
+  //是否有内映射，上图中association, collection都为内映射,内查询不算（就是的reulst节点中配置select属性的情况）
   private boolean hasNestedResultMaps;
+
+  //是否有查询
   private boolean hasNestedQueries;
+
+  //是否需要自动映射
   private Boolean autoMapping;
 
   private ResultMap() {
@@ -85,13 +108,16 @@ public class ResultMap {
       if (resultMap.id == null) {
         throw new IllegalArgumentException("ResultMaps must have an id");
       }
+      //出事话各种集合类
       resultMap.mappedColumns = new HashSet<String>();
       resultMap.mappedProperties = new HashSet<String>();
       resultMap.idResultMappings = new ArrayList<ResultMapping>();
       resultMap.constructorResultMappings = new ArrayList<ResultMapping>();
       resultMap.propertyResultMappings = new ArrayList<ResultMapping>();
       final List<String> constructorArgNames = new ArrayList<String>();
+
       for (ResultMapping resultMapping : resultMap.resultMappings) {
+        //将resultMapping中的数据分别保存到对应的属性集合中
         resultMap.hasNestedQueries = resultMap.hasNestedQueries || resultMapping.getNestedQueryId() != null;
         resultMap.hasNestedResultMaps = resultMap.hasNestedResultMaps || (resultMapping.getNestedResultMapId() != null && resultMapping.getResultSet() == null);
         final String column = resultMapping.getColumn();
@@ -142,6 +168,7 @@ public class ResultMap {
         });
       }
       // lock down collections
+      //初始化好后将集合设置为不可修改
       resultMap.resultMappings = Collections.unmodifiableList(resultMap.resultMappings);
       resultMap.idResultMappings = Collections.unmodifiableList(resultMap.idResultMappings);
       resultMap.constructorResultMappings = Collections.unmodifiableList(resultMap.constructorResultMappings);

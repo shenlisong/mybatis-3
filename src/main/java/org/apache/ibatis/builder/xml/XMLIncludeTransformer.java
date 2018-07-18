@@ -31,6 +31,8 @@ import org.w3c.dom.NodeList;
 
 /**
  * @author Frank D. Martinez [mnesarco]
+ *
+ * include节点的转化类
  */
 public class XMLIncludeTransformer {
 
@@ -42,12 +44,20 @@ public class XMLIncludeTransformer {
     this.builderAssistant = builderAssistant;
   }
 
+  /**
+   * 对外解析Include开放的方法
+   * @param source
+   */
   public void applyIncludes(Node source) {
+
+    //保存可用的属性变量
     Properties variablesContext = new Properties();
     Properties configurationVariables = configuration.getVariables();
     if (configurationVariables != null) {
       variablesContext.putAll(configurationVariables);
     }
+
+    //实际解析的方法
     applyIncludes(source, variablesContext, false);
   }
 

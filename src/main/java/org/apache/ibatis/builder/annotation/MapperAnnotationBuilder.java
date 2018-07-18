@@ -121,13 +121,17 @@ public class MapperAnnotationBuilder {
   public void parse() {
     String resource = type.toString();
     if (!configuration.isResourceLoaded(resource)) {
+      //尝试加载xml配置--处理直接从接口进来的数据
       loadXmlResource();
+
+      //标记已经加载过了
       configuration.addLoadedResource(resource);
       assistant.setCurrentNamespace(type.getName());
       parseCache();
       parseCacheRef();
       Method[] methods = type.getMethods();
       for (Method method : methods) {
+        //每个方法处理
         try {
           // issue #237
           if (!method.isBridge()) {

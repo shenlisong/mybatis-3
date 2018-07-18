@@ -31,6 +31,8 @@ import org.w3c.dom.NodeList;
 
 /**
  * @author Clinton Begin
+ *
+ * xml 脚本构造器
  */
 public class XMLScriptBuilder extends BaseBuilder {
 
@@ -64,11 +66,14 @@ public class XMLScriptBuilder extends BaseBuilder {
   }
 
   public SqlSource parseScriptNode() {
+    //对动态节点进行解析
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
     SqlSource sqlSource = null;
     if (isDynamic) {
+      //如果为动态sql则返回DynamicSqlSource
       sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
     } else {
+      //否则返回RawSqlSource
       sqlSource = new RawSqlSource(configuration, rootSqlNode, parameterType);
     }
     return sqlSource;
@@ -77,27 +82,42 @@ public class XMLScriptBuilder extends BaseBuilder {
   protected MixedSqlNode parseDynamicTags(XNode node) {
     List<SqlNode> contents = new ArrayList<SqlNode>();
     NodeList children = node.getNode().getChildNodes();
-    for (int i = 0; i < children.getLength(); i++) {
+    for (int i = 0; i < children.getLength(); i++) {//遍历当前sql的xml配置的所有子节点
       XNode child = node.newXNode(children.item(i));
       if (child.getNode().getNodeType() == Node.CDATA_SECTION_NODE || child.getNode().getNodeType() == Node.TEXT_NODE) {
+        //如果当前节点是文本节点的处理
         String data = child.getStringBody("");
         TextSqlNode textSqlNode = new TextSqlNode(data);
+
+        //如果文本中有占位符则标记isDynamic为动态节点（"${}"）
         if (textSqlNode.isDynamic()) {
           contents.add(textSqlNode);
           isDynamic = true;
         } else {
+          //重新包装数据为静态节点
           contents.add(new StaticTextSqlNode(data));
         }
       } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628
+        //如果为非文本节点，即有新元素
+
+        //获取动态节点的名称  trim if set
         String nodeName = child.getNode().getNodeName();
+
+        //根据名称获取对应的处理方法
         NodeHandler handler = nodeHandlerMap.get(nodeName);
         if (handler == null) {
           throw new BuilderException("Unknown element <" + nodeName + "> in SQL statement.");
         }
+
+        //不同的handler会重新生成SqlNode放入contents中
         handler.handleNode(child, contents);
+
+        //并设置为动态节点
         isDynamic = true;
       }
     }
+
+    //最后生成MixedSqlNode的SqlNode的代理类
     return new MixedSqlNode(contents);
   }
 

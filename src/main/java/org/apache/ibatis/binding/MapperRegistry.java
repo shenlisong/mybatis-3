@@ -42,11 +42,13 @@ public class MapperRegistry {
 
   @SuppressWarnings("unchecked")
   public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
+    //获取在初始化mapper时缓存的mapper代理工厂
     final MapperProxyFactory<T> mapperProxyFactory = (MapperProxyFactory<T>) knownMappers.get(type);
     if (mapperProxyFactory == null) {
       throw new BindingException("Type " + type + " is not known to the MapperRegistry.");
     }
     try {
+      //通过代理工厂创建一个对象
       return mapperProxyFactory.newInstance(sqlSession);
     } catch (Exception e) {
       throw new BindingException("Error getting mapper instance. Cause: " + e, e);
@@ -59,6 +61,7 @@ public class MapperRegistry {
 
   public <T> void addMapper(Class<T> type) {
     if (type.isInterface()) {
+      //重复判断是否处理过
       if (hasMapper(type)) {
         throw new BindingException("Type " + type + " is already known to the MapperRegistry.");
       }
@@ -68,7 +71,11 @@ public class MapperRegistry {
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the
         // mapper parser. If the type is already known, it won't try.
+
+        //初始化MapperAnnotationBuilder构造器
         MapperAnnotationBuilder parser = new MapperAnnotationBuilder(config, type);
+
+        //正式解析
         parser.parse();
         loadCompleted = true;
       } finally {

@@ -128,6 +128,8 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean readWrite,
       boolean blocking,
       Properties props) {
+
+    //构建缓存类对象
     Cache cache = new CacheBuilder(currentNamespace)
         .implementation(valueOrDefault(typeClass, PerpetualCache.class))
         .addDecorator(valueOrDefault(evictionClass, LruCache.class))
@@ -137,7 +139,11 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .blocking(blocking)
         .properties(props)
         .build();
+
+    //加入configuration
     configuration.addCache(cache);
+
+    //设置当前命名空间的缓存，在之后的解析select/update/insert/delete节点设置缓存里使用currentCache
     currentCache = cache;
     return cache;
   }
@@ -180,15 +186,25 @@ public class MapperBuilderAssistant extends BaseBuilder {
       Discriminator discriminator,
       List<ResultMapping> resultMappings,
       Boolean autoMapping) {
+    //生成唯一的id，NameSpace+resultMap.id
     id = applyCurrentNamespace(id, false);
+
+    //如果有继承的话，获取集成resultMap的id
     extend = applyCurrentNamespace(extend, true);
 
     if (extend != null) {
+      //如果有继承，先要判断父resultMap是否已经初始化完成
       if (!configuration.hasResultMap(extend)) {
         throw new IncompleteElementException("Could not find a parent resultmap with id '" + extend + "'");
       }
+
+      //获取父Map
       ResultMap resultMap = configuration.getResultMap(extend);
+
+      //获取父map的Mapping
       List<ResultMapping> extendedResultMappings = new ArrayList<ResultMapping>(resultMap.getResultMappings());
+
+      //删除其中和当前Mappings的重复的项
       extendedResultMappings.removeAll(resultMappings);
       // Remove parent constructor if this resultMap declares a constructor.
       boolean declaresConstructor = false;
@@ -199,6 +215,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         }
       }
       if (declaresConstructor) {
+        //出事构造方法配置
         Iterator<ResultMapping> extendedResultMappingsIter = extendedResultMappings.iterator();
         while (extendedResultMappingsIter.hasNext()) {
           if (extendedResultMappingsIter.next().getFlags().contains(ResultFlag.CONSTRUCTOR)) {
@@ -206,11 +223,16 @@ public class MapperBuilderAssistant extends BaseBuilder {
           }
         }
       }
+
+      //在当前的resultMapping中添加父Mapping
       resultMappings.addAll(extendedResultMappings);
     }
+
+    //构建resultMap
     ResultMap resultMap = new ResultMap.Builder(configuration, id, type, resultMappings, autoMapping)
         .discriminator(discriminator)
         .build();
+    //将resultMap添加到configuration中
     configuration.addResultMap(resultMap);
     return resultMap;
   }
@@ -272,9 +294,11 @@ public class MapperBuilderAssistant extends BaseBuilder {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
 
+    //根据命名空间生成唯一的id
     id = applyCurrentNamespace(id, false);
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
 
+    //根据MappedStatement的builder设置对应属性并创建
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
         .resource(resource)
         .fetchSize(fetchSize)
@@ -299,6 +323,8 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
 
     MappedStatement statement = statementBuilder.build();
+
+    //将MappedStatement加入configuration中
     configuration.addMappedStatement(statement);
     return statement;
   }
@@ -373,9 +399,16 @@ public class MapperBuilderAssistant extends BaseBuilder {
       String resultSet,
       String foreignColumn,
       boolean lazy) {
+    //解析字段映射的对象
     Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
+
+    //解析获取类型映射类的实例
     TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
+
+    //处理有多个column的情况，用,分隔的情况
     List<ResultMapping> composites = parseCompositeColumnName(column);
+
+    //正式创建ResultMapping对象
     return new ResultMapping.Builder(configuration, property, column, javaTypeClass)
         .jdbcType(jdbcType)
         .nestedQueryId(applyCurrentNamespace(nestedSelect, true))
@@ -422,16 +455,27 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return composites;
   }
 
+  /**
+   * 解析reusult对应的Java对象
+   * @param resultType
+   * @param property
+   * @param javaType
+   * @return
+   */
   private Class<?> resolveResultJavaType(Class<?> resultType, String property, Class<?> javaType) {
     if (javaType == null && property != null) {
       try {
+        //解析java对象，mybatis自定义的元数据，对对象内的方法进行缓存（缓存在configuration.getReflectorFactory()中）
         MetaClass metaResultType = MetaClass.forClass(resultType, configuration.getReflectorFactory());
+
+        //通过元数据获取对应属性的类型
         javaType = metaResultType.getSetterType(property);
       } catch (Exception e) {
         //ignore, following null check statement will deal with the situation
       }
     }
     if (javaType == null) {
+      //如果无法解析，使用object
       javaType = Object.class;
     }
     return javaType;
