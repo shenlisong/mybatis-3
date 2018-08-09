@@ -36,7 +36,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 
 /**
- * 具体mapper方法执行类
+ * 具体mapper方法的包装类
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
@@ -54,6 +54,12 @@ public class MapperMethod {
     this.method = new MethodSignature(config, mapperInterface, method);
   }
 
+  /**
+   * 执行方法
+   * @param sqlSession
+   * @param args
+   * @return
+   */
   public Object execute(SqlSession sqlSession, Object[] args) {
     Object result;
     switch (command.getType()) {
@@ -289,6 +295,9 @@ public class MapperMethod {
     }
   }
 
+  /**
+   * 方法的签名解析
+   */
   public static class MethodSignature {
 
     //返回类型是否为集合/数组
@@ -309,8 +318,10 @@ public class MapperMethod {
     //如果返回返回类型为map，保存其key的field
     private final String mapKey;
 
-    //返回结果的resultHandler
+    //获取参数中类型为ResultHandler的参数的下标
     private final Integer resultHandlerIndex;
+
+    //获取RowBounds类型参数的下标
     private final Integer rowBoundsIndex;
 
     //参数的名称

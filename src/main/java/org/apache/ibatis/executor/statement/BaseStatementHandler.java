@@ -39,9 +39,15 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 public abstract class BaseStatementHandler implements StatementHandler {
 
   protected final Configuration configuration;
+
+  //对象工厂
   protected final ObjectFactory objectFactory;
   protected final TypeHandlerRegistry typeHandlerRegistry;
+
+  //处理结果的handler
   protected final ResultSetHandler resultSetHandler;
+
+  //设置参数的handler
   protected final ParameterHandler parameterHandler;
 
   protected final Executor executor;

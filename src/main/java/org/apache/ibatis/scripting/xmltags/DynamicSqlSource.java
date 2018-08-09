@@ -35,13 +35,26 @@ public class DynamicSqlSource implements SqlSource {
     this.rootSqlNode = rootSqlNode;
   }
 
+    /**
+     * 获取BoundSql对象，即对实际执行的sql和数据的包装
+     * @param parameterObject
+     * @return
+     */
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
+      //动态上下文
     DynamicContext context = new DynamicContext(configuration, parameterObject);
+
+    //将在解析xml时封装的SqlNode，解析成的sql语句（其中“#{}”占位符还没有处理），并放入下文中
     rootSqlNode.apply(context);
+
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
     Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
+
+    //处理#{}
     SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), parameterType, context.getBindings());
+
+    //这个BoundSql就是数据库可执行的Sql,同时还包含了运行时的参数。
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
     for (Map.Entry<String, Object> entry : context.getBindings().entrySet()) {
       boundSql.setAdditionalParameter(entry.getKey(), entry.getValue());
